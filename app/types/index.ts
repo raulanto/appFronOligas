@@ -36,3 +36,10 @@ export interface ProduccionGasPetroleoDataPoint {
     oil_prod32_14: number;
     gas_prod55_14: number;
 }
+
+
+export interface EvolucionPrecioRealDataPoint {
+    year: number;
+    oil_price_2000: number;
+    gas_price_2000_mboe: number;
+}
