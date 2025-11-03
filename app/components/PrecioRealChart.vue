@@ -1,26 +1,67 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { VueUiXy } from "vue-data-ui/vue-ui-xy";
-import "vue-data-ui/style.css"; // If you are using multiple components, place this style import in your main
+import "vue-data-ui/style.css";
+const configApi = useRuntimeConfig();
+const props = defineProps<{
+    country_code_alpha3: string
+}>();
+const {
+    data: chartdata,
+    status
+} = await useFetch(`${configApi.public.apiBase}oligas/per-capita/${props.country_code_alpha3}/`, {
+    key: 'typicode-oil-per-capital',
+})
 
-import type { EvolucionPrecioRealDataPoint } from "~/types"
+watch(() => props.country_code_alpha3, async (newCode) => {
+    if (newCode) {
+        const {data} = await useFetch(`${configApi.public.apiBase}oligas/per-capita/${props.country_code_alpha3}/`, {
+            key: `typicode-oil-per-capital-${newCode}`,
+        });
+        chartdata.value = data.value;
+    }
+});
 
-interface Props {
-    data: EvolucionPrecioRealDataPoint[]
+const hoveredInfo = ref(null);
+
+const lastDataPoint = computed(() => {
+    if (!chartdata.value || chartdata.value.length === 0) {
+        return null;
+    }
+    return chartdata.value[chartdata.value.length - 1];
+});
+
+function onDatapointEnter(payload) {
+
+    hoveredInfo.value = payload;
 }
-const props = defineProps<Props>()
 
+function onDatapointLeave(payload) {
+    hoveredInfo.value = null;
+}
 
+const yearData = computed(() => {
 
+    // Si hoveredInfo.value NO es null (es decir, el ratón está sobre un punto)
+    if (hoveredInfo.value) {
+        // Devuelve el 'label' de ese punto, que en tu caso es el AÑO
+        return chartdata.value[hoveredInfo.value.seriesIndex].year;
+    }
+
+    // Si hoveredInfo.value ES null (el ratón está fuera de la gráfica)
+    // devuelve el año del último punto de la serie como valor por defecto.
+    return lastDataPoint.value?.year || null;
+});
 const config = computed(() => {
+    const lastIndex = (dataset.value.labels?.length || 0) - 1;
     return {
         debug: false,
         theme: '',
         responsive: true,
         loading: false,
         events: {
-            datapointEnter: null,
-            datapointLeave: null,
+            datapointEnter: onDatapointEnter, // <--- ASÍ
+            datapointLeave: onDatapointLeave, // <--- ASÍ
             datapointClick: null
         },
         responsiveProportionalSizing: true,
@@ -31,21 +72,21 @@ const config = computed(() => {
         },
         chart: {
             fontFamily: 'Public Sans',
-            backgroundColor: '#FFFFFFff',
+            backgroundColor: 'rgba(255,255,255,0)',
             color: '#1A1A1Aff',
             height: 700,
             width: 400,
             annotations: [
                 {
-                    show: false,
+                    show: true,
                     yAxis: {
-                        yTop: null,
-                        yBottom: null,
+                        yTop: 40,
+
                         label: {
-                            text: '',
+                            text: 'mhvhj',
                             textAnchor: 'start',
                             position: 'start',
-                            offsetX: 0,
+                            offsetX: 2,
                             offsetY: 0,
                             padding: {
                                 top: 12,
@@ -68,10 +109,7 @@ const config = computed(() => {
                             strokeWidth: 1,
                             strokeDasharray: 0
                         },
-                        area: {
-                            fill: '#e1e5e8',
-                            opacity: 30
-                        }
+
                     }
                 }
             ],
@@ -103,8 +141,8 @@ const config = computed(() => {
                 preview: {
                     enable: true,
                     fill: '#CCCCCC50',
-                    stroke: '#c0142eff',
-                    strokeWidth: 2,
+                    stroke: 'rgba(35,34,35,0.96)',
+                    strokeWidth: 1,
                     strokeDasharray: 0
                 },
                 useDefaultFormat: true,
@@ -142,7 +180,8 @@ const config = computed(() => {
                 }
             },
             timeTag: {
-                show: false,
+                show: true,
+                index: 82,
                 backgroundColor: '#e1e5e8ff',
                 color: '#1A1A1Aff',
                 fontSize: 12,
@@ -199,8 +238,8 @@ const config = computed(() => {
                         gap: 12,
                         labelWidth: 40,
                         formatter: null,
-                        scaleMin: null,
-                        scaleMax: null,
+                        scaleMin: 4,
+                        scaleMax: 9,
                         groupColor: '#1A1A1A',
                         scaleLabelOffsetX: 0,
                         scaleValueOffsetX: 0,
@@ -210,7 +249,7 @@ const config = computed(() => {
                     xAxisLabels: {
                         color: '#1A1A1Aff',
                         show: true,
-                        values: props.data.map(item => item.year || 0),
+                        values: chartdata.value.map(item => item.year || 0),
                         datetimeFormatter: {
                             enable: false,
                             locale: 'en',
@@ -251,7 +290,7 @@ const config = computed(() => {
                 suffix: ''
             },
             legend: {
-                color: '#1A1A1Aff',
+                color: 'text-primary-900',
                 show: true,
                 fontSize: 10,
                 position: 'top'
@@ -273,17 +312,17 @@ const config = computed(() => {
                 show: false
             },
             tooltip: {
-                show: true,
+                show: false,
                 color: '#1A1A1Aff',
                 backgroundColor: 'rgba(255,255,255,0.65)',
-                fontSize: 14,
+                fontSize: 10,
                 customFormat: null,
                 borderRadius: 4,
                 borderColor: '#e1e5e8',
-                borderWidth: 1,
+                borderWidth: 0.5,
                 backgroundOpacity: 15,
                 position: 'center',
-                offsetY: 24,
+
                 smooth: true,
                 backdropFilter: true,
                 smoothForce: 0.18,
@@ -291,14 +330,16 @@ const config = computed(() => {
                 showTimeLabel: true,
                 showValue: true,
                 showPercentage: false,
-                roundingValue: 0,
+                roundingValue: 7,
                 roundingPercentage: 0,
                 useDefaultTimeFormat: true,
-                timeFormat: 'yyyy-MM-dd HH:mm:ss'
+                timeFormat: 'yyyy-MM-dd HH:mm:ss',
+                offsetX: 50,
+                offsetY: 10
             },
             userOptions: {
                 show: true,
-                showOnChartHover: false,
+                showOnChartHover: true,
                 keepStateOnChartLeave: true,
                 position: 'right',
                 buttons: {
@@ -309,7 +350,7 @@ const config = computed(() => {
                     table: true,
                     labels: true,
                     fullscreen: true,
-                    sort: false,
+                    sort: true,
                     stack: true,
                     animation: false,
                     annotator: true,
@@ -369,13 +410,13 @@ const config = computed(() => {
             area: {
                 useGradient: true,
                 opacity: 10
-            }
+            },
         },
 
         table: {
             useDialog: false,
             responsiveBreakpoint: 400,
-            rounding: 0,
+            rounding: 7,
             sparkline: true,
             showSum: true,
             columnNames: {
@@ -398,59 +439,64 @@ const config = computed(() => {
         showTable: false
     } });
 
-const data = props.data || [];
-
-watch(
-    () => props.data,
-    (newData) => {
-        if (newData) {
-            data.splice(0, data.length, ...newData);
-        }
-    },
-    { immediate: true }
-)
-
 const dataset = computed(() => {
     return [
         {
-            name: 'Petroleo',
-            series: props.data.map(item => item.oil_price_2000 || 0),
-            color: '#1f77b4',
+            name: 'Precio global del petróleo',
+            series: chartdata.value.map(item => item.oil_price_2000 || 0),
+            color: '#d81d39',
             type: 'line',
             shape: 'none',
-            useArea: false,
-            useProgression: false,
+            useArea: true,
+            useProgression: true,
             dataLabels: false,
             smooth: true,
             dashed: false,
-            useTag: 'Petroleo'
+            useTag: 'Petroleo',
+            showSerieName: 'start'
         },
         {
-            name: 'Gas',
-            series: props.data.map(item => item.gas_price_2000_mboe || 0),
-            color: '#42d392',
-            type: 'line',
+            name: 'Valor real per cápita',
+            series: chartdata.value.map(item => item.oil_gas_valuePOP_2000 || 0),
+            color: '#5abe45',
+            type: 'bar',
             shape: 'none',
             useArea: false,
             useProgression: false,
             dataLabels: false,
             smooth: true,
             dashed: false,
-            useTag: 'Gas'
+            useTag: 'Gas',
+
         }
     ];
 });
-</script>
-<template>
 
-    <client-only>
-        <div :style="{ width: '100%' , height: '500px' }">
-            <VueUiXy
-                :config="config"
-                :dataset="dataset"
-            >
-            </VueUiXy>
-        </div>
-    </client-only>
+</script>
+
+
+<template>
+<stats-precio-per-capital :data="hoveredInfo" :lastDataPoint="lastDataPoint" :year="yearData"/>
+    <UCard :ui="{ root: 'overflow-visible', body: '!px-0 !pt-0 !pb-3' }">
+        <template #header>
+            Riqueza Per Cápita
+        </template>
+
+        <client-only>
+            <div :style="{ width: '100%' , height: '500px' }">
+
+                <VueUiXy
+                    :config="config"
+                    :dataset="dataset"
+                >
+
+
+                </VueUiXy>
+            </div>
+        </client-only>
+
+
+    </UCard>
+
 
 </template>

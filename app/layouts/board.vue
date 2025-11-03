@@ -11,11 +11,29 @@ const links = [
         {
             label: "Inicio",
             icon: "i-lucide-house",
-            to: "/board",
+            to: "/",
             onSelect: () => {
                 open.value = false;
             },
-        }]
+        },
+        {
+            label: "Precio",
+            icon: "i-lucide-house",
+            to: "/precio",
+            onSelect: () => {
+                open.value = false;
+            },
+        },
+        {
+            label: "Volatilidad y Riesgo",
+            icon: "i-lucide-house",
+            to: "/volatilidad",
+            onSelect: () => {
+                open.value = false;
+            },
+        }
+
+    ]
 
 ] satisfies NavigationMenuItem[][];
 
