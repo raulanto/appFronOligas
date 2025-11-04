@@ -3,65 +3,24 @@ import { computed } from "vue";
 import { VueUiXy } from "vue-data-ui/vue-ui-xy";
 import "vue-data-ui/style.css";
 const configApi = useRuntimeConfig();
-const props = defineProps<{
-    country_code_alpha3: string
-}>();
+
 const {
     data: chartdata,
     status
-} = await useFetch(`${configApi.public.apiBase}oligas/per-capita/${props.country_code_alpha3}/`, {
-    key: 'typicode-oil-per-capital',
+} = await useFetch(`${configApi.public.apiBase}oligas/volatilidad-precios/`, {
+    key: 'typicode-oil-per-volatilidad-precios',
 })
 
-watch(() => props.country_code_alpha3, async (newCode) => {
-    if (newCode) {
-        const {data} = await useFetch(`${configApi.public.apiBase}oligas/per-capita/${props.country_code_alpha3}/`, {
-            key: `typicode-oil-per-capital-${newCode}`,
-        });
-        chartdata.value = data.value;
-    }
-});
 
-const hoveredInfo = ref(null);
 
-const lastDataPoint = computed(() => {
-    if (!chartdata.value || chartdata.value.length === 0) {
-        return null;
-    }
-    return chartdata.value[chartdata.value.length - 1];
-});
 
-function onDatapointEnter(payload) {
-
-    hoveredInfo.value = payload;
-}
-
-function onDatapointLeave(payload) {
-    hoveredInfo.value = null;
-}
-
-const yearData = computed(() => {
-
-    // Si hoveredInfo.value NO es null (es decir, el ratón está sobre un punto)
-    if (hoveredInfo.value) {
-        // Devuelve el 'label' de ese punto, que en tu caso es el AÑO
-        return chartdata.value[hoveredInfo.value.seriesIndex].year;
-    }
-
-    // Si hoveredInfo.value ES null (el ratón está fuera de la gráfica)
-    // devuelve el año del último punto de la serie como valor por defecto.
-    return lastDataPoint.value?.year || null;
-});
 const config = computed(() => {
-    const lastIndex = (dataset.value.labels?.length || 0) - 1;
     return {
         debug: false,
         theme: '',
         responsive: true,
         loading: false,
         events: {
-            datapointEnter: onDatapointEnter, // <--- ASÍ
-            datapointLeave: onDatapointLeave, // <--- ASÍ
             datapointClick: null
         },
         responsiveProportionalSizing: true,
@@ -156,9 +115,9 @@ const config = computed(() => {
                 left: 6
             },
             highlighter: {
-                color: '#1A1A1Aff',
-                opacity: 5,
-                useLine: false,
+                color: '#1A1A1A',
+                opacity: 10,
+                useLine: true,
                 lineDasharray: 2,
                 lineWidth: 1
             },
@@ -166,12 +125,12 @@ const config = computed(() => {
                 show: false,
                 from: 0,
                 to: 0,
-                color: '#CCCCCCff',
+                color: '#CCCCCC',
                 opacity: 20,
                 caption: {
-                    text: 'Caption',
-                    fontSize: 20,
-                    color: '#1A1A1Aff',
+                    text: '',
+                    fontSize: 14,
+                    color: '#1A1A1A',
                     bold: false,
                     offsetY: 0,
                     width: 'auto',
@@ -180,17 +139,17 @@ const config = computed(() => {
                 }
             },
             timeTag: {
-                show: true,
-                index: 82,
-                backgroundColor: '#e1e5e8ff',
-                color: '#1A1A1Aff',
+                show: false,
+                index: 0,
+                backgroundColor: '#e1e5e8',
+                color: '#1A1A1A',
                 fontSize: 12,
                 circleMarker: {
                     radius: 3,
-                    color: '#1A1A1Aff'
+                    color: '#1A1A1A'
                 },
                 useDefaultFormat: true,
-                timeFormat: 'yyyy-MM-dd HH:mm:ss',
+                timeFormat: 'yyyy',
                 customFormat: null
             },
             grid: {
@@ -218,7 +177,7 @@ const config = computed(() => {
                         fontSize: 12
                     },
                     zeroLine: {
-                        show: true
+                        show: false
                     },
                     xAxis: {
                         showBaseline: true,
@@ -230,26 +189,20 @@ const config = computed(() => {
                         position: 'left',
                         showBaseline: true,
                         showCrosshairs: false,
-                        crosshairSize: 6,
-                        commonScaleSteps: 10,
                         useIndividualScale: true,
                         useNiceScale: true,
                         stacked: false,
                         gap: 12,
                         labelWidth: 40,
                         formatter: null,
-                        scaleMin: 4,
-                        scaleMax: 9,
                         groupColor: '#1A1A1A',
-                        scaleLabelOffsetX: 0,
-                        scaleValueOffsetX: 0,
-                        rounding: 1,
+                        rounding: 2,
                         serieNameFormatter: null
                     },
                     xAxisLabels: {
                         color: '#1A1A1Aff',
                         show: true,
-                        values: chartdata.value.map(item => item.year || 0),
+                        values: chartdata.value.results.map(item => item.year || 0),
                         datetimeFormatter: {
                             enable: false,
                             locale: 'en',
@@ -442,12 +395,12 @@ const config = computed(() => {
 const dataset = computed(() => {
     return [
         {
-            name: 'Precio global del petróleo',
-            series: chartdata.value.map(item => item.oil_price_2000 || 0),
-            color: '#d81d39',
+            name: 'Volatilidad Petróleo',
+            series: chartdata.value.results.map(item => item.oil_price_volatility || 0),
+            color: '#054cf5',
             type: 'line',
             shape: 'none',
-            useArea: true,
+            useArea: false,
             useProgression: true,
             dataLabels: false,
             smooth: true,
@@ -457,12 +410,12 @@ const dataset = computed(() => {
         },
         {
             name: 'Valor real per cápita',
-            series: chartdata.value.map(item => item.oil_gas_valuePOP_2000 || 0),
-            color: '#5abe45',
-            type: 'bar',
+            series: chartdata.value.results.map(item => item.gas_price_volatility || 0),
+            color: '#f3730d',
+            type: 'line',
             shape: 'none',
             useArea: false,
-            useProgression: false,
+            useProgression: true,
             dataLabels: false,
             smooth: true,
             dashed: false,
@@ -476,7 +429,7 @@ const dataset = computed(() => {
 
 
 <template>
-<stats-precio-per-capital :data="hoveredInfo" :lastDataPoint="lastDataPoint" :year="yearData"/>
+
     <UCard :ui="{ root: 'overflow-visible', body: '!px-0 !pt-0 !pb-3' }">
         <template #header>
             Riqueza Per Cápita
